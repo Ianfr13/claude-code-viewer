@@ -50,7 +50,7 @@ export interface MessageInput {
 }
 
 const PRESET_MODELS = [
-  { value: "", label: "Default" },
+  { value: "default", label: "Default" },
   { value: "claude-opus-4-6", label: "Opus 4.6" },
   { value: "claude-sonnet-4-6", label: "Sonnet 4.6" },
   { value: "claude-opus-4-5", label: "Opus 4.5" },
@@ -136,12 +136,13 @@ export const ChatInput: FC<ChatInputProps> = ({
   const [forkSession, setForkSession] = useState(true);
 
   // Model selector: "" means use the default (no override)
-  const [selectedModel, setSelectedModel] = useState("");
+  const [selectedModel, setSelectedModel] = useState("default");
   const handleModelChange = (model: string) => {
     setSelectedModel(model);
     setCCOptions((prev) => {
       const base = prev ?? getDefaultCCOptions();
-      return model ? { ...base, model } : { ...base, model: undefined };
+      const resolved = model === "default" ? "" : model;
+      return resolved ? { ...base, model: resolved } : { ...base, model: undefined };
     });
   };
 
