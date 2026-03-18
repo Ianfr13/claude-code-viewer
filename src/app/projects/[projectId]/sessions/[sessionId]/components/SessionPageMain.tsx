@@ -42,6 +42,7 @@ import { firstUserMessageToTitle } from "../../../services/firstCommandToTitle";
 import { useExportSession } from "../hooks/useExportSession";
 import { useGitCurrentRevisions } from "../hooks/useGit";
 import { useSession } from "../hooks/useSession";
+import { useSessionQuery } from "../hooks/useSessionQuery";
 import { useSessionProcess } from "../hooks/useSessionProcess";
 import { sessionProcessesAtom } from "../store/sessionProcessesAtom";
 import { ConversationList } from "./conversationList/ConversationList";
@@ -69,7 +70,37 @@ export const SessionPageMain: FC<SessionPageMainProps> = (props) => {
   return <SessionPageMainWithData {...props} sessionId={props.sessionId} />;
 };
 
+// Validates the sessionId against the server before rendering.
+// If the session is not found (e.g. stale sessionId from another project),
+// navigates away to clear the invalid sessionId from the URL.
 const SessionPageMainWithData: FC<
+  SessionPageMainProps & { sessionId: string }
+> = (props) => {
+  const query = useSessionQuery(props.projectId, props.sessionId);
+  const navigate = useNavigate();
+
+  const sessionNotFound = query.data.session == null;
+
+  useEffect(() => {
+    if (sessionNotFound) {
+      navigate({
+        to: "/projects/$projectId/session",
+        params: { projectId: props.projectId },
+        search: (prev) => ({ ...prev, sessionId: undefined }),
+        replace: true,
+      });
+    }
+  }, [sessionNotFound, navigate, props.projectId]);
+
+  if (sessionNotFound) {
+    return null;
+  }
+
+  return <SessionPageMainWithValidData {...props} />;
+};
+
+// Only rendered when the session is confirmed to exist.
+const SessionPageMainWithValidData: FC<
   SessionPageMainProps & { sessionId: string }
 > = (props) => {
   const sessionData = useSession(props.projectId, props.sessionId);
