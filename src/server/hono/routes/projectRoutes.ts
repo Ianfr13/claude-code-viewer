@@ -207,6 +207,32 @@ const projectRoutes = Effect.gen(function* () {
         },
       )
 
+      .put(
+        "/:projectId/files",
+        zValidator(
+          "json",
+          z.object({
+            filePath: z.string().min(1, "filePath is required"),
+            content: z.string(),
+          }),
+        ),
+        async (c) => {
+          const { projectId } = c.req.param();
+          const { filePath, content } = c.req.valid("json");
+          const response = await effectToResponse(
+            c,
+            fileSystemController
+              .writeFileContentRoute({
+                projectId,
+                filePath,
+                content,
+              })
+              .pipe(Effect.provide(runtime)),
+          );
+          return response;
+        },
+      )
+
       /**
        * git routes
        */

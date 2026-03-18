@@ -6,6 +6,7 @@ import { ProjectRepository } from "../../project/infrastructure/ProjectRepositor
 import { getDirectoryListing } from "../functions/getDirectoryListing";
 import { getFileCompletion } from "../functions/getFileCompletion";
 import { getFileContent } from "../functions/getFileContent";
+import { writeFileContent } from "../functions/writeFileContent";
 
 const LayerImpl = Effect.gen(function* () {
   const projectRepository = yield* ProjectRepository;
@@ -122,10 +123,50 @@ const LayerImpl = Effect.gen(function* () {
       } as const satisfies ControllerResponse;
     });
 
+  const writeFileContentRoute = (options: {
+    projectId: string;
+    filePath: string;
+    content: string;
+  }) =>
+    Effect.gen(function* () {
+      const { projectId, filePath, content } = options;
+
+      const { project } = yield* projectRepository.getProject(projectId);
+
+      if (project.meta.projectPath === null) {
+        return {
+          response: {
+            success: false,
+            error: "PROJECT_PATH_NOT_SET",
+            message: "Project path is not configured.",
+            filePath,
+          },
+          status: 400,
+        } as const satisfies ControllerResponse;
+      }
+
+      const result = yield* Effect.promise(() =>
+        writeFileContent(project.meta.projectPath as string, filePath, content),
+      );
+
+      if (!result.success) {
+        return {
+          response: result,
+          status: result.error === "INVALID_PATH" ? 400 : 500,
+        } as const satisfies ControllerResponse;
+      }
+
+      return {
+        response: result,
+        status: 200,
+      } as const satisfies ControllerResponse;
+    });
+
   return {
     getFileCompletionRoute,
     getDirectoryListingRoute,
     getFileContentRoute,
+    writeFileContentRoute,
   };
 });
 

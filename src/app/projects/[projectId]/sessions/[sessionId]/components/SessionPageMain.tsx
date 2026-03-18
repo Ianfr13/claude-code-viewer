@@ -45,6 +45,7 @@ import { useSession } from "../hooks/useSession";
 import { useSessionProcess } from "../hooks/useSessionProcess";
 import { useSessionQuery } from "../hooks/useSessionQuery";
 import { sessionProcessesAtom } from "../store/sessionProcessesAtom";
+import { ContextUsage } from "./conversationList/ContextUsage";
 import { ConversationList } from "./conversationList/ConversationList";
 import { ChatActionMenu } from "./resumeChat/ChatActionMenu";
 import { ContinueChat } from "./resumeChat/ContinueChat";
@@ -301,6 +302,20 @@ const SessionPageMainContent: FC<
       });
     }
   };
+
+  const lastAssistantContext = useMemo(() => {
+    for (let i = conversations.length - 1; i >= 0; i--) {
+      const conv = conversations[i];
+      if (conv && conv.type === "assistant" && !conv.isSidechain) {
+        return {
+          inputTokens: conv.message.usage.input_tokens,
+          outputTokens: conv.message.usage.output_tokens,
+          modelName: conv.message.model,
+        };
+      }
+    }
+    return null;
+  }, [conversations]);
 
   const sessionTitle =
     sessionData?.session.meta.firstUserMessage != null
@@ -594,6 +609,13 @@ const SessionPageMainContent: FC<
                 {headerTitle}
               </h1>
             </div>
+            {lastAssistantContext && (
+              <ContextUsage
+                inputTokens={lastAssistantContext.inputTokens}
+                outputTokens={lastAssistantContext.outputTokens}
+                modelName={lastAssistantContext.modelName}
+              />
+            )}
           </div>
         </header>
 

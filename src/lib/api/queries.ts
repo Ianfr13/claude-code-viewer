@@ -410,3 +410,20 @@ export const fileContentQuery = (projectId: string, filePath: string) =>
       return await response.json();
     },
   }) as const;
+
+export const writeFileContentMutationFn = async (params: {
+  projectId: string;
+  filePath: string;
+  content: string;
+}) => {
+  const response = await honoClient.api.projects[":projectId"].files.$put({
+    param: { projectId: params.projectId },
+    json: { filePath: params.filePath, content: params.content },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to write file");
+  }
+
+  return await response.json();
+};

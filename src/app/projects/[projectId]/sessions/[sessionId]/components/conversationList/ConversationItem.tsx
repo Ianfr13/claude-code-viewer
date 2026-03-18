@@ -10,7 +10,6 @@ import { formatLocaleDate } from "@/lib/date/formatLocaleDate";
 import type { SupportedLocale } from "@/lib/i18n/schema";
 import { parseUserMessage } from "@/server/core/claude-code/functions/parseUserMessage";
 import { AssistantConversationContent } from "./AssistantConversationContent";
-import { ContextUsage } from "./ContextUsage";
 import { FileHistorySnapshotConversationContent } from "./FileHistorySnapshotConversationContent";
 import { MetaConversationContent } from "./MetaConversationContent";
 import { SummaryConversationContent } from "./SummaryConversationContent";
@@ -35,7 +34,6 @@ export const ConversationItem: FC<{
   projectId: string;
   sessionId: string;
   showTimestamp?: boolean;
-  isLastAssistant?: boolean;
 }> = ({
   conversation,
   getToolResult,
@@ -47,7 +45,6 @@ export const ConversationItem: FC<{
   projectId,
   sessionId,
   showTimestamp = true,
-  isLastAssistant = false,
 }) => {
   const { i18n } = useLingui();
   const locale = (i18n.locale as SupportedLocale) || "en";
@@ -296,18 +293,11 @@ export const ConversationItem: FC<{
             </li>
           ))}
         </ul>
-        <div className="flex items-center gap-3 flex-wrap">
-          {turnDuration !== undefined && (
+        {turnDuration !== undefined && (
+          <div className="flex items-center gap-3">
             <TurnDuration durationMs={turnDuration} />
-          )}
-          {isLastAssistant && (
-            <ContextUsage
-              inputTokens={conversation.message.usage.input_tokens}
-              outputTokens={conversation.message.usage.output_tokens}
-              modelName={conversation.message.model}
-            />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   }

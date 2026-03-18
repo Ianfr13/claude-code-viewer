@@ -1,12 +1,21 @@
 import { Trans } from "@lingui/react";
-import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Eye, FileCode, Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertCircle,
+  CheckIcon,
+  Eye,
+  FileCode,
+  Loader2,
+  PencilIcon,
+  XIcon,
+} from "lucide-react";
 import { type FC, type ReactNode, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +33,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fileContentQuery } from "@/lib/api/queries";
+import {
+  fileContentQuery,
+  writeFileContentMutationFn,
+} from "@/lib/api/queries";
 import { detectLanguage } from "@/lib/file-viewer";
 import { useTheme } from "../../../../../../../hooks/useTheme";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
@@ -35,12 +47,6 @@ export type FileContentDialogProps = {
   children?: ReactNode;
 };
 
-/**
- * Dialog component for viewing file content with syntax highlighting.
- * Supports multiple files with a dropdown selector when more than one file is provided.
- * Fetches file content from API when opened and displays it with appropriate
- * syntax highlighting based on file extension.
- */
 export const FileContentDialog: FC<FileContentDialogProps> = ({
   projectId,
   filePaths,
@@ -48,40 +54,67 @@ export const FileContentDialog: FC<FileContentDialogProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
   const { resolvedTheme } = useTheme();
   const syntaxTheme = resolvedTheme === "dark" ? oneDark : oneLight;
+  const queryClient = useQueryClient();
 
-  // Get the currently selected file path
   const selectedFilePath = filePaths[selectedIndex] ?? filePaths[0];
 
-  // Reset selection when dialog closes or file list changes
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
       setSelectedIndex(0);
+      setIsEditing(false);
+      setEditContent("");
     }
   };
 
-  // Only fetch when dialog is open
   const { data, isLoading, error, refetch } = useQuery({
     ...fileContentQuery(projectId, selectedFilePath ?? ""),
     enabled: isOpen && selectedFilePath !== undefined,
   });
 
-  // Extract filename from path for display
+  const writeMutation = useMutation({
+    mutationFn: writeFileContentMutationFn,
+    onSuccess: () => {
+      toast.success("File saved");
+      setIsEditing(false);
+      queryClient.invalidateQueries({
+        queryKey: fileContentQuery(projectId, selectedFilePath ?? "").queryKey,
+      });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to save file");
+    },
+  });
+
+  const handleEditStart = () => {
+    if (data?.success === true) {
+      setEditContent(data.content);
+      setIsEditing(true);
+    }
+  };
+
+  const handleSave = () => {
+    if (!selectedFilePath) return;
+    writeMutation.mutate({
+      projectId,
+      filePath: selectedFilePath,
+      content: editContent,
+    });
+  };
+
   const fileName = selectedFilePath?.split("/").pop() ?? selectedFilePath ?? "";
 
-  // Determine language for syntax highlighting
-  // Use API-provided language if available, otherwise detect from path
   const language =
     data?.success === true
       ? data.language
       : detectLanguage(selectedFilePath ?? "");
 
-  // Check if there are multiple files
   const hasMultipleFiles = filePaths.length > 1;
 
-  // Default trigger button if no children provided
   const defaultTrigger = (
     <Button
       variant="ghost"
@@ -120,7 +153,11 @@ export const FileContentDialog: FC<FileContentDialogProps> = ({
                   {hasMultipleFiles ? (
                     <Select
                       value={String(selectedIndex)}
-                      onValueChange={(value) => setSelectedIndex(Number(value))}
+                      onValueChange={(value) => {
+                        setSelectedIndex(Number(value));
+                        setIsEditing(false);
+                        setEditContent("");
+                      }}
                     >
                       <SelectTrigger
                         className="h-7 text-[10px] font-mono max-w-[400px]"
@@ -153,8 +190,49 @@ export const FileContentDialog: FC<FileContentDialogProps> = ({
                 </div>
               </DialogDescription>
             </div>
+
+            {/* Edit / Save / Cancel buttons */}
+            {data?.success === true && !isEditing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-shrink-0 h-8 px-2 gap-1 text-xs"
+                onClick={handleEditStart}
+              >
+                <PencilIcon className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+            )}
+            {isEditing && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 gap-1 text-xs text-muted-foreground"
+                  onClick={() => setIsEditing(false)}
+                  disabled={writeMutation.isPending}
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-8 px-2 gap-1 text-xs"
+                  onClick={handleSave}
+                  disabled={writeMutation.isPending}
+                >
+                  {writeMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  )}
+                  Save
+                </Button>
+              </div>
+            )}
           </div>
         </DialogHeader>
+
         <div className="flex-1 overflow-auto">
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -199,7 +277,20 @@ export const FileContentDialog: FC<FileContentDialogProps> = ({
               )}
             </div>
           )}
+
+          {/* Edit mode: textarea */}
+          {data?.success === true && isEditing && (
+            <textarea
+              className="w-full h-full resize-none font-mono text-xs p-4 bg-background text-foreground focus:outline-none"
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              spellCheck={false}
+            />
+          )}
+
+          {/* View mode: syntax highlight or markdown */}
           {data?.success === true &&
+            !isEditing &&
             (language === "markdown" ? (
               <div className="px-6 py-4">
                 <MarkdownContent content={data.content} />
