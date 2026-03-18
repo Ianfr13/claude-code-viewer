@@ -268,7 +268,9 @@ export const RightPanel: FC<RightPanelProps> = ({
           <div className="flex-1 overflow-auto">{reviewTabContent}</div>
         )}
         {activeTab === "project-files" && (
-          <div className="flex-1 overflow-hidden h-full">{projectFilesTabContent}</div>
+          <div className="flex-1 overflow-hidden h-full">
+            {projectFilesTabContent}
+          </div>
         )}
         {activeTab === "browser" && (
           <BrowserTabContent

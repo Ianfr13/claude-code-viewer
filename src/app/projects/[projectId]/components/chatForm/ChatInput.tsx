@@ -142,7 +142,9 @@ export const ChatInput: FC<ChatInputProps> = ({
     setCCOptions((prev) => {
       const base = prev ?? getDefaultCCOptions();
       const resolved = model === "default" ? "" : model;
-      return resolved ? { ...base, model: resolved } : { ...base, model: undefined };
+      return resolved
+        ? { ...base, model: resolved }
+        : { ...base, model: undefined };
     });
   };
 
