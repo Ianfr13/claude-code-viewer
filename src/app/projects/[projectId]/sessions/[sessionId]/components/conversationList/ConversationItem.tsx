@@ -172,7 +172,7 @@ export const ConversationItem: FC<{
   }
 
   if (conversation.type === "queue-operation") {
-    return <QueueOperationConversationContent conversation={conversation} />;
+    return null;
   }
 
   if (conversation.type === "user") {
