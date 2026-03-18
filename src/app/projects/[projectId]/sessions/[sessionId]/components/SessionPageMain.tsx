@@ -42,8 +42,8 @@ import { firstUserMessageToTitle } from "../../../services/firstCommandToTitle";
 import { useExportSession } from "../hooks/useExportSession";
 import { useGitCurrentRevisions } from "../hooks/useGit";
 import { useSession } from "../hooks/useSession";
-import { useSessionQuery } from "../hooks/useSessionQuery";
 import { useSessionProcess } from "../hooks/useSessionProcess";
+import { useSessionQuery } from "../hooks/useSessionQuery";
 import { sessionProcessesAtom } from "../store/sessionProcessesAtom";
 import { ConversationList } from "./conversationList/ConversationList";
 import { ChatActionMenu } from "./resumeChat/ChatActionMenu";
@@ -208,23 +208,6 @@ const SessionPageMainContent: FC<
 
   useTaskNotifications(effectiveSessionStatus === "running");
 
-  // Filter scheduler jobs related to this session
-  const sessionScheduledJobs = useMemo(() => {
-    if (!sessionId || !allSchedulerJobs) return [];
-    return allSchedulerJobs.filter(
-      (job) =>
-        job.message.baseSession?.sessionId === sessionId &&
-        job.message.projectId === projectId &&
-        job.schedule.type === "reserved" &&
-        job.lastRunStatus === null, // Only show jobs that haven't been executed yet
-    );
-  }, [allSchedulerJobs, sessionId, projectId]);
-
-  const [previousConversationLength, setPreviousConversationLength] =
-    useState(0);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-
   const abortTask = useMutation({
     mutationFn: async (sessionProcessId: string) => {
       const response = await honoClient.api["claude-code"]["session-processes"][
@@ -241,6 +224,41 @@ const SessionPageMainContent: FC<
       return response.json();
     },
   });
+
+  // Press Escape to abort the running session
+  useEffect(() => {
+    if (effectiveSessionStatus !== "running") return;
+    if (!relatedSessionProcess) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      // Don't abort if a dialog/popover is consuming the Esc key
+      if (e.defaultPrevented) return;
+      abortTask.mutate(relatedSessionProcess.id);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [effectiveSessionStatus, relatedSessionProcess, abortTask]);
+
+  // Filter scheduler jobs related to this session
+  const sessionScheduledJobs = useMemo(() => {
+    if (!sessionId || !allSchedulerJobs) return [];
+    return allSchedulerJobs.filter(
+      (job) =>
+        job.message.baseSession?.sessionId === sessionId &&
+        job.message.projectId === projectId &&
+        job.schedule.type === "reserved" &&
+        job.lastRunStatus === null, // Only show jobs that haven't been executed yet
+    );
+  }, [allSchedulerJobs, sessionId, projectId]);
+
+  const [previousConversationLength, setPreviousConversationLength] =
+    useState(0);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isExistingSession) return;

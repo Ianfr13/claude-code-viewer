@@ -61,6 +61,7 @@ export const ResumeChat: FC<{
         enableScheduledSend={true}
         baseSessionId={sessionId}
         enableCCOptions={true}
+        showModelSelector={true}
       />
     </div>
   );

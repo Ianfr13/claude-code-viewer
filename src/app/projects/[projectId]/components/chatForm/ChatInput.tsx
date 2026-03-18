@@ -49,6 +49,15 @@ export interface MessageInput {
   forkSession?: boolean;
 }
 
+const PRESET_MODELS = [
+  { value: "", label: "Default" },
+  { value: "claude-opus-4-6", label: "Opus 4.6" },
+  { value: "claude-sonnet-4-6", label: "Sonnet 4.6" },
+  { value: "claude-opus-4-5", label: "Opus 4.5" },
+  { value: "claude-sonnet-4-5", label: "Sonnet 4.5" },
+  { value: "claude-haiku-4-5", label: "Haiku 4.5" },
+] as const;
+
 export interface ChatInputProps {
   projectId: string;
   onSubmit: (input: MessageInput) => Promise<void>;
@@ -63,6 +72,7 @@ export interface ChatInputProps {
   enableScheduledSend?: boolean;
   baseSessionId?: string | null;
   enableCCOptions?: boolean;
+  showModelSelector?: boolean;
 }
 
 export const ChatInput: FC<ChatInputProps> = ({
@@ -79,6 +89,7 @@ export const ChatInput: FC<ChatInputProps> = ({
   enableScheduledSend = false,
   baseSessionId = null,
   enableCCOptions = false,
+  showModelSelector = false,
 }) => {
   // Parse minHeight prop to get pixel value (default to 48px for 1.5 lines)
   // Supports both "200px" and Tailwind format like "min-h-[200px]"
@@ -123,6 +134,16 @@ export const ChatInput: FC<ChatInputProps> = ({
     getDefaultCCOptions,
   );
   const [forkSession, setForkSession] = useState(true);
+
+  // Model selector: "" means use the default (no override)
+  const [selectedModel, setSelectedModel] = useState("");
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+    setCCOptions((prev) => {
+      const base = prev ?? getDefaultCCOptions();
+      return model ? { ...base, model } : { ...base, model: undefined };
+    });
+  };
 
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -531,6 +552,28 @@ export const ChatInput: FC<ChatInputProps> = ({
                   >
                     {message.length}
                   </span>
+                )}
+                {showModelSelector && (
+                  <Select
+                    value={selectedModel}
+                    onValueChange={handleModelChange}
+                    disabled={isPending || disabled}
+                  >
+                    <SelectTrigger className="h-7 w-[110px] text-xs border-transparent hover:border-border/50 bg-transparent hover:bg-background/80 shadow-none focus:ring-1 focus:ring-primary/20 transition-all duration-200">
+                      <SelectValue placeholder="Model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRESET_MODELS.map((m) => (
+                        <SelectItem
+                          key={m.value}
+                          value={m.value}
+                          className="text-xs"
+                        >
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
                 {enableCCOptions && (
                   <ClaudeCodeSettingsPopover

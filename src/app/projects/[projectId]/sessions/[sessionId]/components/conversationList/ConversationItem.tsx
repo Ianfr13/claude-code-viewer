@@ -10,9 +10,9 @@ import { formatLocaleDate } from "@/lib/date/formatLocaleDate";
 import type { SupportedLocale } from "@/lib/i18n/schema";
 import { parseUserMessage } from "@/server/core/claude-code/functions/parseUserMessage";
 import { AssistantConversationContent } from "./AssistantConversationContent";
+import { ContextUsage } from "./ContextUsage";
 import { FileHistorySnapshotConversationContent } from "./FileHistorySnapshotConversationContent";
 import { MetaConversationContent } from "./MetaConversationContent";
-import { QueueOperationConversationContent } from "./QueueOperationConversationContent";
 import { SummaryConversationContent } from "./SummaryConversationContent";
 import { SystemConversationContent } from "./SystemConversationContent";
 import { TurnDuration } from "./TurnDuration";
@@ -294,9 +294,16 @@ export const ConversationItem: FC<{
             </li>
           ))}
         </ul>
-        {turnDuration !== undefined && (
-          <TurnDuration durationMs={turnDuration} />
-        )}
+        <div className="flex items-center gap-3 flex-wrap">
+          {turnDuration !== undefined && (
+            <TurnDuration durationMs={turnDuration} />
+          )}
+          <ContextUsage
+            inputTokens={conversation.message.usage.input_tokens}
+            outputTokens={conversation.message.usage.output_tokens}
+            modelName={conversation.message.model}
+          />
+        </div>
       </div>
     );
   }
