@@ -160,7 +160,7 @@
         126
       ]
     ],
-    "translation": ""
+    "translation": "Reload CLI commands"
   },
   "Reload MCP servers": {
     "placeholders": {},
@@ -684,7 +684,7 @@
         83
       ]
     ],
-    "translation": ""
+    "translation": "Type a message to queue — it will be sent after Claude finishes"
   },
   "chat.placeholder.continue.shift_enter": {
     "message": "Type your message... (Start with / for commands, @ for files, Shift+Enter to send)",
@@ -748,7 +748,7 @@
         115
       ]
     ],
-    "translation": ""
+    "translation": "Queue"
   },
   "chat.queued_message.name": {
     "message": "Queued message",
@@ -760,7 +760,7 @@
         36
       ]
     ],
-    "translation": ""
+    "translation": "Queued message"
   },
   "chat.queued_send.failed": {
     "message": "Failed to queue message",
@@ -772,7 +772,7 @@
         66
       ]
     ],
-    "translation": ""
+    "translation": "Failed to queue message"
   },
   "chat.queued_send.success": {
     "message": "Message queued",
@@ -784,7 +784,7 @@
         53
       ]
     ],
-    "translation": ""
+    "translation": "Message queued"
   },
   "chat.queued_send.success_description": {
     "message": "Will be sent automatically after Claude finishes",
@@ -796,7 +796,7 @@
         58
       ]
     ],
-    "translation": ""
+    "translation": "Will be sent automatically after Claude finishes"
   },
   "chat.resume": {
     "placeholders": {},
@@ -819,7 +819,7 @@
         127
       ]
     ],
-    "translation": ""
+    "translation": "Claude is working — your message will be queued and sent after it finishes"
   },
   "chat.scheduled_send.failed": {
     "message": "Failed to schedule message",
@@ -961,7 +961,7 @@
         144
       ]
     ],
-    "translation": ""
+    "translation": "Failed to load CLI commands"
   },
   "cli.no.commands": {
     "message": "No CLI commands found",
@@ -973,7 +973,7 @@
         153
       ]
     ],
-    "translation": ""
+    "translation": "No CLI commands found"
   },
   "cli.title": {
     "message": "CLI Commands",
@@ -985,7 +985,7 @@
         119
       ]
     ],
-    "translation": ""
+    "translation": "CLI Commands"
   },
   "common.action.cancel": {
     "placeholders": {},
@@ -3752,7 +3752,7 @@
         76
       ]
     ],
-    "translation": ""
+    "translation": "CLI Commands"
   },
   "sidebar.show.mcp.settings": {
     "placeholders": {},
