@@ -4,6 +4,7 @@ import { BottomPanel } from "@/app/components/BottomPanel";
 import { RightPanel } from "@/app/components/RightPanel";
 import { FilesToolsTabContent } from "@/app/components/rightPanel/FilesToolsTabContent";
 import { GitTabContent } from "@/app/components/rightPanel/GitTabContent";
+import { ProjectFilesTabContent } from "@/app/components/rightPanel/ProjectFilesTabContent";
 import { ReviewTabContent } from "@/app/components/rightPanel/ReviewTabContent";
 import { Loading } from "@/components/Loading";
 import { ResizableSidebar } from "@/components/ResizableSidebar";
@@ -99,6 +100,14 @@ export const SessionPageContent: FC<{
             <Suspense fallback={<Loading />}>
               <ReviewTabContent projectId={projectId} sessionId={sessionId} />
             </Suspense>
+          }
+          projectFilesTabContent={
+            projectPath ? (
+              <ProjectFilesTabContent
+                projectId={projectId}
+                projectPath={projectPath}
+              />
+            ) : null
           }
         />
       </div>

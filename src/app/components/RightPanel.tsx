@@ -3,6 +3,7 @@ import { useSetAtom } from "jotai";
 import {
   ClipboardCheckIcon,
   FileTextIcon,
+  FolderTreeIcon,
   GitCompareIcon,
   GlobeIcon,
   RefreshCwIcon,
@@ -32,6 +33,7 @@ interface RightPanelProps {
   gitTabContent?: ReactNode;
   filesToolsTabContent?: ReactNode;
   reviewTabContent?: ReactNode;
+  projectFilesTabContent?: ReactNode;
 }
 
 interface TabConfig {
@@ -57,12 +59,18 @@ const tabs: TabConfig[] = [
     label: <Trans id="panel.tab.review" />,
   },
   { id: "browser", icon: GlobeIcon, label: <Trans id="panel.tab.browser" /> },
+  {
+    id: "project-files",
+    icon: FolderTreeIcon,
+    label: "Arquivos",
+  },
 ];
 
 export const RightPanel: FC<RightPanelProps> = ({
   gitTabContent,
   filesToolsTabContent,
   reviewTabContent,
+  projectFilesTabContent,
 }) => {
   const { isOpen, activeTab, width, browserUrl, inputUrl } =
     useRightPanelState();
@@ -258,6 +266,9 @@ export const RightPanel: FC<RightPanelProps> = ({
         )}
         {activeTab === "review" && (
           <div className="flex-1 overflow-auto">{reviewTabContent}</div>
+        )}
+        {activeTab === "project-files" && (
+          <div className="flex-1 overflow-hidden h-full">{projectFilesTabContent}</div>
         )}
         {activeTab === "browser" && (
           <BrowserTabContent

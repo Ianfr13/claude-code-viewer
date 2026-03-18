@@ -1,7 +1,7 @@
 import { Trans } from "@lingui/react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { FolderIcon } from "lucide-react";
-import type { FC } from "react";
+import { type FC, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +19,17 @@ export const ProjectList: FC = () => {
     data: { projects },
   } = useProjects();
   const { config } = useConfig();
+  const navigate = useNavigate();
+
+  // Se só tem 1 projeto, redireciona direto sem mostrar a tela de seleção
+  useEffect(() => {
+    if (projects.length === 1 && projects[0]) {
+      navigate({
+        to: "/projects/$projectId/session",
+        params: { projectId: projects[0].id },
+      });
+    }
+  }, [projects, navigate]);
 
   if (projects.length === 0) {
     <Card>

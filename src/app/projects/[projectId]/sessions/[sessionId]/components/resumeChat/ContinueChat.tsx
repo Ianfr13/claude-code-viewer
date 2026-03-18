@@ -12,7 +12,7 @@ export const ContinueChat: FC<{
   sessionId: string;
   sessionProcessId: string;
   sessionProcessStatus?: "running" | "paused";
-}> = ({ projectId, sessionId, sessionProcessId, sessionProcessStatus }) => {
+}> = ({ projectId, sessionId, sessionProcessId, sessionProcessStatus: _sessionProcessStatus }) => {
   const { i18n } = useLingui();
   const continueSessionProcess = useContinueSessionProcessMutation(
     projectId,
@@ -47,8 +47,6 @@ export const ContinueChat: FC<{
     });
   };
 
-  const isRunning = sessionProcessStatus === "running";
-
   return (
     <div className="w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 pb-3">
       <ChatInput
@@ -60,9 +58,9 @@ export const ContinueChat: FC<{
         buttonText={<Trans id="chat.send" />}
         containerClassName=""
         buttonSize="default"
-        enableScheduledSend={!isRunning}
+        enableScheduledSend={true}
         baseSessionId={sessionId}
-        disabled={isRunning}
+        disabled={false}
       />
     </div>
   );
