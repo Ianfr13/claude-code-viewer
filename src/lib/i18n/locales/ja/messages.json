@@ -160,7 +160,7 @@
         126
       ]
     ],
-    "translation": "Reload CLI commands"
+    "translation": "CLIコマンドを再読み込み"
   },
   "Reload MCP servers": {
     "placeholders": {},
