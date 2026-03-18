@@ -6,6 +6,7 @@ import {
   ListTodoIcon,
   MessageSquareIcon,
   PlugIcon,
+  SlashIcon,
 } from "lucide-react";
 import { type FC, Suspense, useMemo } from "react";
 import type { SidebarTab } from "@/components/GlobalSidebar";
@@ -22,6 +23,7 @@ import {
 } from "@/hooks/useLayoutPanels";
 import { cn } from "@/lib/utils";
 import { Loading } from "../../../../../../../components/Loading";
+import { CliTab } from "./CliTab";
 import { McpTab } from "./McpTab";
 import { MobileSidebar } from "./MobileSidebar";
 import { SchedulerTab } from "./SchedulerTab";
@@ -67,6 +69,12 @@ export const SessionSidebar: FC<{
         icon: PlugIcon,
         title: <Trans id="sidebar.show.mcp.settings" />,
         content: <McpTab projectId={projectId} />,
+      },
+      {
+        id: "cli",
+        icon: SlashIcon,
+        title: <Trans id="sidebar.show.cli.commands" message="CLI Commands" />,
+        content: <CliTab projectId={projectId} />,
       },
       {
         id: "tasks",

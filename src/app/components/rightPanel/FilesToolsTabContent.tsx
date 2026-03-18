@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Bot,
   BotIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -8,10 +9,15 @@ import {
   ExternalLinkIcon,
   Eye,
   FileIcon,
+  FilePen,
+  FileSearch,
   FilterIcon,
+  Globe,
   Loader2,
   MessageSquare,
-  TerminalIcon,
+  Plug,
+  Terminal,
+  Wrench,
   WrenchIcon,
   XCircle,
 } from "lucide-react";
@@ -34,6 +40,7 @@ import {
 import { agentSessionListQuery, agentSessionQuery } from "@/lib/api/queries";
 import { extractAllEditedFiles, extractToolCalls } from "@/lib/file-viewer";
 import { extractLatestTodos } from "@/lib/todo-viewer";
+import { getToolStyle } from "@/lib/tool-style/toolStyle";
 import { cn } from "@/lib/utils";
 import { ConversationList } from "../../projects/[projectId]/sessions/[sessionId]/components/conversationList/ConversationList";
 import { FileContentDialog } from "../../projects/[projectId]/sessions/[sessionId]/components/conversationList/FileContentDialog";
@@ -236,11 +243,34 @@ const ToolCallItem: FC<{
     }
   }, [timestamp]);
 
+  const style = getToolStyle(name);
+
+  const ToolIcon = (() => {
+    switch (style.category) {
+      case "read":
+        return FileSearch;
+      case "write":
+        return FilePen;
+      case "bash":
+        return Terminal;
+      case "agent":
+        return Bot;
+      case "web":
+        return Globe;
+      case "mcp":
+        return Plug;
+      default:
+        return Wrench;
+    }
+  })();
+
   return (
     <div className="flex items-start gap-2 px-2 py-1.5 text-xs hover:bg-muted/30 rounded-md transition-colors">
-      <TerminalIcon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground mt-0.5" />
+      <ToolIcon
+        className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${style.iconColor}`}
+      />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="font-medium text-foreground">{name}</span>
           <span className="text-[10px] text-muted-foreground">
             {formattedTime}

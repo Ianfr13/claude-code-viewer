@@ -35,6 +35,7 @@ export const ConversationItem: FC<{
   projectId: string;
   sessionId: string;
   showTimestamp?: boolean;
+  isLastAssistant?: boolean;
 }> = ({
   conversation,
   getToolResult,
@@ -46,6 +47,7 @@ export const ConversationItem: FC<{
   projectId,
   sessionId,
   showTimestamp = true,
+  isLastAssistant = false,
 }) => {
   const { i18n } = useLingui();
   const locale = (i18n.locale as SupportedLocale) || "en";
@@ -298,11 +300,13 @@ export const ConversationItem: FC<{
           {turnDuration !== undefined && (
             <TurnDuration durationMs={turnDuration} />
           )}
-          <ContextUsage
-            inputTokens={conversation.message.usage.input_tokens}
-            outputTokens={conversation.message.usage.output_tokens}
-            modelName={conversation.message.model}
-          />
+          {isLastAssistant && (
+            <ContextUsage
+              inputTokens={conversation.message.usage.input_tokens}
+              outputTokens={conversation.message.usage.output_tokens}
+              modelName={conversation.message.model}
+            />
+          )}
         </div>
       </div>
     );

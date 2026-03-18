@@ -246,6 +246,17 @@ export const ConversationList: FC<ConversationListProps> = ({
     [turnDurationMap],
   );
 
+  // Find the UUID of the last non-sidechain assistant message (for session-level context display)
+  const lastAssistantUuid = useMemo(() => {
+    let last: string | undefined;
+    for (const conv of validConversations) {
+      if (conv.type === "assistant" && !conv.isSidechain) {
+        last = conv.uuid;
+      }
+    }
+    return last;
+  }, [validConversations]);
+
   // Build a map of tool_use_id -> agentId from user entries with toolUseResult
   const toolUseIdToAgentIdMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -390,6 +401,10 @@ export const ConversationList: FC<ConversationListProps> = ({
                 projectId={projectId}
                 sessionId={sessionId}
                 showTimestamp={showTimestamp}
+                isLastAssistant={
+                  conversation.type === "assistant" &&
+                  conversation.uuid === lastAssistantUuid
+                }
               />
             );
 

@@ -27,6 +27,7 @@ import {
 import { fileContentQuery } from "@/lib/api/queries";
 import { detectLanguage } from "@/lib/file-viewer";
 import { useTheme } from "../../../../../../../hooks/useTheme";
+import { MarkdownContent } from "../../../../../../components/MarkdownContent";
 
 export type FileContentDialogProps = {
   projectId: string;
@@ -198,28 +199,33 @@ export const FileContentDialog: FC<FileContentDialogProps> = ({
               )}
             </div>
           )}
-          {data?.success === true && (
-            <SyntaxHighlighter
-              style={syntaxTheme}
-              language={language}
-              showLineNumbers
-              wrapLines
-              customStyle={{
-                margin: 0,
-                borderRadius: 0,
-                fontSize: "0.75rem",
-                minHeight: "100%",
-              }}
-              lineNumberStyle={{
-                minWidth: "3em",
-                paddingRight: "1em",
-                textAlign: "right",
-                userSelect: "none",
-              }}
-            >
-              {data.content}
-            </SyntaxHighlighter>
-          )}
+          {data?.success === true &&
+            (language === "markdown" ? (
+              <div className="px-6 py-4">
+                <MarkdownContent content={data.content} />
+              </div>
+            ) : (
+              <SyntaxHighlighter
+                style={syntaxTheme}
+                language={language}
+                showLineNumbers
+                wrapLines
+                customStyle={{
+                  margin: 0,
+                  borderRadius: 0,
+                  fontSize: "0.75rem",
+                  minHeight: "100%",
+                }}
+                lineNumberStyle={{
+                  minWidth: "3em",
+                  paddingRight: "1em",
+                  textAlign: "right",
+                  userSelect: "none",
+                }}
+              >
+                {data.content}
+              </SyntaxHighlighter>
+            ))}
         </div>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,15 @@
 import { Trans } from "@lingui/react";
-import { ChevronDown, Lightbulb, Wrench } from "lucide-react";
+import {
+  Bot,
+  ChevronDown,
+  FilePen,
+  FileSearch,
+  Globe,
+  Lightbulb,
+  Plug,
+  Terminal,
+  Wrench,
+} from "lucide-react";
 import type { FC } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -16,6 +26,7 @@ import {
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
 import type { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
 import { extractEditedFilePaths } from "@/lib/file-viewer";
+import { getCategoryLabel, getToolStyle } from "@/lib/tool-style/toolStyle";
 import { useTheme } from "../../../../../../../hooks/useTheme";
 import type { SidechainConversation } from "../../../../../../../lib/conversation-schema";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
@@ -127,14 +138,47 @@ export const AssistantConversationContent: FC<{
         <FileContentDialog projectId={projectId} filePaths={editedFilePaths} />
       ) : undefined;
 
+    const toolStyle = getToolStyle(content.name);
+    const categoryLabel = getCategoryLabel(toolStyle.category);
+
+    const ToolIcon = (() => {
+      switch (toolStyle.category) {
+        case "read":
+          return FileSearch;
+        case "write":
+          return FilePen;
+        case "bash":
+          return Terminal;
+        case "agent":
+          return Bot;
+        case "web":
+          return Globe;
+        case "mcp":
+          return Plug;
+        default:
+          return Wrench;
+      }
+    })();
+
     return (
-      <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 mb-2 p-0 overflow-hidden">
+      <Card
+        className={`${toolStyle.border} ${toolStyle.bg} mb-2 p-0 overflow-hidden`}
+      >
         <Collapsible>
           <div className="flex items-center min-w-0">
             <CollapsibleTrigger asChild>
-              <div className="flex-1 min-w-0 cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/20 transition-all duration-200 px-3 py-1.5 group">
+              <div
+                className={`flex-1 min-w-0 cursor-pointer ${toolStyle.hoverBg} transition-all duration-200 px-3 py-1.5 group`}
+              >
                 <div className="flex items-center gap-2 min-w-0">
-                  <Wrench className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <ToolIcon
+                    className={`h-4 w-4 ${toolStyle.iconColor} flex-shrink-0`}
+                  />
+                  <span
+                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${toolStyle.bg} ${toolStyle.border} border ${toolStyle.iconColor} flex-shrink-0`}
+                  >
+                    {categoryLabel}
+                  </span>
                   <div className="w-full min-w-0 text-sm font-medium group-hover:text-foreground transition-colors overflow-hidden text-ellipsis whitespace-nowrap">
                     {content.name}
                     {Object.keys(content.input).length > 0 && (
@@ -150,19 +194,25 @@ export const AssistantConversationContent: FC<{
               </div>
             </CollapsibleTrigger>
             {(taskModal || fileContentDialog) && (
-              <div className="flex-shrink-0 border-l border-blue-200 dark:border-blue-800 flex items-center">
+              <div
+                className={`flex-shrink-0 border-l ${toolStyle.separatorBorder} flex items-center`}
+              >
                 {taskModal}
                 {fileContentDialog}
               </div>
             )}
           </div>
           <CollapsibleContent>
-            <div className="space-y-3 py-3 px-4 border-t border-blue-200 dark:border-blue-800">
+            <div
+              className={`space-y-3 py-3 px-4 border-t ${toolStyle.separatorBorder}`}
+            >
               <div>
                 <h4 className="text-xs font-medium text-muted-foreground mb-1">
                   <Trans id="assistant.tool.tool_id" />
                 </h4>
-                <code className="text-xs bg-background/50 px-2 py-1 rounded border border-blue-200 dark:border-blue-800 font-mono">
+                <code
+                  className={`text-xs bg-background/50 px-2 py-1 rounded border ${toolStyle.innerBorder} font-mono`}
+                >
                   {content.id}
                 </code>
               </div>
