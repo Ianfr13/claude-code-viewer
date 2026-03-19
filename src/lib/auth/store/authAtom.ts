@@ -6,8 +6,9 @@ export interface AuthState {
   checked: boolean;
 }
 
+// Authentication is disabled — always start as authenticated.
 export const authAtom = atom<AuthState>({
   authEnabled: false,
-  authenticated: false,
-  checked: false,
+  authenticated: true,
+  checked: true,
 });

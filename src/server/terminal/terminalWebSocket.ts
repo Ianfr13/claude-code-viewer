@@ -3,7 +3,6 @@ import type { ServerType } from "@hono/node-server";
 import { Effect, Runtime } from "effect";
 import WebSocket, { WebSocketServer } from "ws";
 import { TerminalService } from "../core/terminal/TerminalService";
-import { AuthMiddleware } from "../hono/middleware/auth.middleware";
 
 type ServerMessage =
   | { type: "hello"; sessionId: string; seq: number }
@@ -18,18 +17,6 @@ type ClientMessage =
   | { type: "signal"; name: string }
   | { type: "sync"; lastSeq: number }
   | { type: "ping" };
-
-const parseCookies = (cookieHeader: string | undefined) => {
-  const result: Record<string, string> = {};
-  if (!cookieHeader) return result;
-  const parts = cookieHeader.split(";");
-  for (const part of parts) {
-    const [rawKey, ...rest] = part.trim().split("=");
-    if (!rawKey) continue;
-    result[rawKey] = rest.join("=");
-  }
-  return result;
-};
 
 const parseClientMessage = (payload: string): ClientMessage | undefined => {
   try {
@@ -73,8 +60,6 @@ const baseUrlForRequest = (req: IncomingMessage) => {
 export const setupTerminalWebSocket = (server: ServerType) =>
   Effect.gen(function* () {
     const terminalService = yield* TerminalService;
-    const { getAuthState } = yield* AuthMiddleware;
-    const { authEnabled, validSessionToken } = yield* getAuthState;
     const runtime = yield* Effect.runtime<TerminalService>();
     const runPromise = Runtime.runPromise(runtime);
 
@@ -83,15 +68,6 @@ export const setupTerminalWebSocket = (server: ServerType) =>
     server.on("upgrade", (req, socket, head) => {
       const url = new URL(req.url ?? "/", baseUrlForRequest(req));
       if (url.pathname !== "/ws/terminal") return;
-
-      if (authEnabled) {
-        const cookies = parseCookies(req.headers.cookie);
-        if (cookies["ccv-session"] !== validSessionToken) {
-          socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-          socket.destroy();
-          return;
-        }
-      }
 
       wss.handleUpgrade(req, socket, head, (ws: WebSocket) => {
         wss.emit("connection", ws, req);

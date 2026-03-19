@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Critical Rules (Read First)
 
 **Language**:
@@ -17,14 +19,63 @@
 - Follow TDD: write tests first, then implement
 - Run `pnpm typecheck` and `pnpm fix` before committing
 
+## Commands
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build (compiles i18n, builds frontend with Vite, bundles backend with esbuild → dist/)
+pnpm build
+
+# Type checking
+pnpm typecheck
+
+# Auto-fix linting and formatting (Biome)
+pnpm fix
+
+# Check only — lint + format (run in CI)
+pnpm lint
+
+# Run unit tests once
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run only tests affected since origin/main
+pnpm vitest run --changed origin/main
+
+# E2E visual regression snapshot capture (Playwright-based VRT)
+pnpm e2e
+
+# i18n: extract new/updated strings into catalog files
+pnpm lingui:extract
+
+# i18n: compile catalogs to TypeScript
+pnpm lingui:compile
+
+# Check for missing translations (used in CI)
+./scripts/lingui-check.sh
+```
+
+## Default Verification Before Committing
+
+Run all of the following without being asked; fix any failures proactively:
+
+```bash
+pnpm typecheck
+pnpm fix
+pnpm vitest run --changed origin/main
+./scripts/lingui-check.sh
+```
+
 ## Commit Message Rules
 
 Conventional Commits format: `type: description`
 
-**Release Note Awareness**:
-- Commit messages are included in release notes; write for users.
+Commit messages are included in release notes — write for users.
 
-**Type Selection**:
 | Type | Release Note | Purpose |
 |------|--------------|---------|
 | `feat` | Features | User-facing new feature |
@@ -33,7 +84,7 @@ Conventional Commits format: `type: description`
 
 **Critical**: Use `fix` only for user-facing bugs. Internal fixes (linter errors, type errors, build scripts) must use `chore`.
 
-**Message Quality Examples**:
+Examples:
 - Bad: `fix: fix lingui error` (internal issue)
 - Bad: `feat: add button` (too vague)
 - Good: `feat: add dark mode toggle to settings`
@@ -42,44 +93,29 @@ Conventional Commits format: `type: description`
 
 ## Project Overview
 
-Claude Code Viewer reads Claude Code session logs directly from JSONL files (`~/.claude/projects/`) with zero data loss. It's a web-based client built as a CLI tool serving a Vite application.
+Claude Code Viewer reads Claude Code session logs directly from JSONL files (`~/.claude/projects/`) with zero data loss. It's a web-based client distributed as a CLI tool (`claude-code-viewer`) that serves a Vite-built frontend.
 
 **Core Architecture**:
-- Frontend: Vite + TanStack Router + React 19 + TanStack Query
-- Backend: Hono (standalone server) + Effect-TS (all business logic)
-- Data: Direct JSONL reads with strict Zod validation
-- Real-time: Server-Sent Events (SSE) for live updates
+- Frontend: Vite + TanStack Router + React 19 + TanStack Query + Jotai (global state)
+- Backend: Hono (standalone server, `@hono/node-server`) + Effect-TS (all business logic)
+- Data: Direct JSONL reads with strict Zod validation; no separate database
+- Real-time: Server-Sent Events (SSE) at `/api/sse` for live session updates
+- Cache: `~/.claude-code-viewer/` (invalidated via SSE when source changes)
 
-## Development Workflow
-
-### Quality Checks
-
-```bash
-# Type checking (mandatory before commits)
-pnpm typecheck
-
-# Auto-fix linting and formatting (Biome)
-pnpm fix
-```
-
-After `pnpm fix`, manually address any remaining issues.
-
-### Testing
-
-```bash
-# Run unit tests
-pnpm test
-```
-
-**TDD Workflow**: Write tests → Run tests → Implement → Verify → Quality checks
+In dev mode, Vite proxies `/api` to the backend (port 3401). In production, a single `dist/main.js` serves both static files and API on one port.
 
 ## Key Directory Patterns
 
-- `src/server/hono/route.ts` - Hono API routes definition (all routes defined here)
-- `src/server/core/` - Effect-TS business logic (domain modules: session, project, git, etc.)
-- `src/lib/conversation-schema/` - Zod schemas for JSONL validation
-- `src/testing/layers/` - Reusable Effect test layers (`testPlatformLayer` is the foundation)
-- `src/routes/` - TanStack Router routes
+- `src/server/hono/route.ts` — All Hono API route definitions
+- `src/server/core/` — Effect-TS domain modules (claude-code, session, project, git, events, scheduler, rate-limit, platform, etc.)
+- `src/lib/conversation-schema/` — Zod schemas for JSONL conversation log validation
+- `src/lib/api/` — Hono RPC client (frontend)
+- `src/lib/sse/` — SSE connection management (frontend)
+- `src/testing/layers/` — Reusable Effect test layers (`testPlatformLayer` is the foundation)
+- `src/routes/` — TanStack Router file-based routes
+- `src/app/` — Shared page components and hooks
+- `src/components/ui/` — shadcn/ui components
+- `mock-global-claude-dir/` — Mock JSONL data for E2E tests (useful schema reference)
 
 ## Coding Standards
 
@@ -87,14 +123,18 @@ pnpm test
 
 **Prioritize Pure Functions**:
 - Extract logic into pure, testable functions whenever possible
-- Pure functions are easier to test, reason about, and maintain
 - Only use Effect-TS when side effects or state management is required
 
 **Use Effect-TS for Side Effects and State**:
 - Mandatory for I/O operations, async code, and stateful logic
 - Avoid class-based implementations or mutable variables for state
-- Use Effect-TS's functional patterns for state management
 - Reference: https://effect.website/llms.txt
+
+Each domain module in `src/server/core/` follows this structure:
+- `functions/` — Pure functions
+- `services/` — Effect-TS services for I/O or state
+- `presentation/` — Controllers wiring services to Hono routes
+- `infrastructure/` — Repositories for data access
 
 **Testing with Layers**:
 ```typescript
@@ -111,16 +151,14 @@ test("example", async () => {
 })
 ```
 
-**Avoid Node.js Built-ins**:
-- Use `FileSystem.FileSystem` instead of `node:fs`
-- Use `Path.Path` instead of `node:path`
-- Use `Command.string` instead of `child_process`
+**Avoid Node.js Built-ins** (use Effect platform equivalents for testability):
+- `FileSystem.FileSystem` instead of `node:fs`
+- `Path.Path` instead of `node:path`
+- `Command.string` instead of `child_process`
 
-This enables dependency injection and proper testing.
-
-**Type Safety - NO `as` Casting**:
-- `as` casting is **strictly prohibited**
-- If types seem unsolvable without `as`, explain the problem to the user and ask for guidance
+**Type Safety — NO `as` Casting**:
+- `as` casting is strictly prohibited
+- If types seem unsolvable without `as`, explain the problem and ask for guidance
 - Valid alternatives: type guards, assertion functions, Zod schema validation
 
 ### Frontend: API Access
@@ -136,11 +174,11 @@ const { data } = useQuery({
 })
 ```
 
-Raw `fetch` and direct requests are prohibited.
+Raw `fetch` and direct requests are prohibited. For real-time updates use the `useServerEventListener` hook.
 
 ### Tech Standards
 
-- **Linter/Formatter**: Biome (not ESLint/Prettier)
+- **Linter/Formatter**: Biome (not ESLint/Prettier) — `noProcessEnv` rule is set to error level
 - **Type Config**: `@tsconfig/strictest`
 - **Path Alias**: `@/*` maps to `./src/*`
 
@@ -148,14 +186,11 @@ Raw `fetch` and direct requests are prohibited.
 
 ### SSE (Server-Sent Events)
 
-**When to Use SSE**:
-- Delivering session log updates to frontend
-- Notifying clients of background process state changes
-- **Never** for request-response patterns (use Hono RPC instead)
-
-**Implementation**:
+- Use SSE for delivering session log updates and background process state changes to the frontend
+- Never use SSE for request-response patterns (use Hono RPC instead)
 - Server: `/api/sse` endpoint with type-safe events (`TypeSafeSSE`)
 - Client: `useServerEventListener` hook for subscriptions
+- Event types: `connect`, `heartbeat`, `sessionListChanged`, `sessionChanged`, `sessionProcessChanged`, `permissionRequested`
 
 ### Data Layer
 
@@ -165,10 +200,19 @@ Raw `fetch` and direct requests are prohibited.
 
 ### Session Process Management
 
-Claude Code processes remain alive in the background (unless aborted), allowing session continuation without changing session-id.
+Claude Code processes remain alive in the background (unless aborted), allowing session continuation without changing session-id. Memory sharing between processes makes production build verification crucial.
 
-## Development Tips
+## i18n
 
-1. **Session Logs**: Examine `~/.claude/projects/` JSONL files to understand data structures
-2. **Mock Data**: `mock-global-claude-dir/` contains E2E test mocks (useful reference for schema examples)
-3. **Effect-TS Help**: https://effect.website/llms.txt
+Translation catalogs live in `src/lib/i18n/locales/`. Supported languages: English, Japanese, Simplified Chinese. When adding user-visible strings: run `pnpm lingui:extract`, add translations, run `pnpm lingui:compile`. Missing translations fail CI.
+
+## E2E Snapshots
+
+VRT uses Playwright to capture screenshots for visual regression. **Do not commit locally captured snapshots** — they vary by environment. For PRs with UI changes, add the `vrt` label to trigger automatic snapshot updates in CI.
+
+---
+# System CLIs Available
+
+The following CLI tools are pre-installed. Full docs are in `.claude/cli-docs/` and available as slash commands.
+
+Installed: ai-context cli-anything-infisical cli-anything-railway cloudflared gh gws playwright supabase wrangler

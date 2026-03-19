@@ -13,7 +13,6 @@ import { UserConfigService } from "../../core/platform/services/UserConfigServic
 import { userConfigSchema } from "../../lib/config/config";
 import type { HonoAppType, HonoContext } from "../app";
 import { InitializeService } from "../initialize";
-import { AuthMiddleware } from "../middleware/auth.middleware";
 import { configMiddleware } from "../middleware/config.middleware";
 import { getHonoRuntime } from "../runtime";
 import { authRoutes } from "./authRoutes";
@@ -58,7 +57,6 @@ export const routes = (app: HonoAppType, options: CliOptions) =>
     const userConfigService = yield* UserConfigService;
     const initializeService = yield* InitializeService;
 
-    const { authRequiredMiddleware } = yield* AuthMiddleware;
     const apiOnly =
       (yield* ccvOptionsService.getCcvOptions("apiOnly")) === true;
     const apiOnlyMiddleware = createApiOnlyMiddleware(apiOnly);
@@ -100,10 +98,8 @@ export const routes = (app: HonoAppType, options: CliOptions) =>
 
         .route("/api/auth", yield* authRoutes)
 
-        .use(authRequiredMiddleware)
-
         /**
-         * Private Routes
+         * Routes
          */
         .get("/api/config", async (c) => {
           return c.json({
