@@ -22,10 +22,11 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { authEnabled, isAuthenticated, login } = useAuth();
+  const { authEnabled, isAuthenticated, checked, login } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!checked) return;
     // If auth is not enabled, redirect to projects
     if (!authEnabled) {
       navigate({ to: "/projects" });
@@ -33,7 +34,7 @@ function LoginPage() {
       // If already authenticated, redirect to projects
       navigate({ to: "/projects" });
     }
-  }, [authEnabled, isAuthenticated, navigate]);
+  }, [authEnabled, isAuthenticated, checked, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

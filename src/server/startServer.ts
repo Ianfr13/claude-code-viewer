@@ -66,6 +66,9 @@ export const startServer = async (options: CliOptions) => {
       }
 
       const html = await readFile(resolve(staticPath, "index.html"), "utf-8");
+      c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+      c.header("Pragma", "no-cache");
+      c.header("Expires", "0");
       return c.html(html);
     });
   }
@@ -92,7 +95,7 @@ export const startServer = async (options: CliOptions) => {
       (options.port ?? process.env.PORT ?? "3000");
 
   // biome-ignore lint/style/noProcessEnv: allow only here
-  const hostname = options.hostname ?? process.env.HOSTNAME ?? "localhost";
+  const hostname = options.hostname ?? process.env.HOSTNAME ?? "0.0.0.0";
 
   server.listen(parseInt(port, 10), hostname, () => {
     const info = server.address();

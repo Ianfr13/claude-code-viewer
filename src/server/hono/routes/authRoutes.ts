@@ -32,9 +32,12 @@ const authRoutes = Effect.gen(function* () {
           return c.json({ error: "Invalid password" }, 401);
         }
 
+        const isHttps =
+          c.req.header("x-forwarded-proto") === "https" ||
+          c.req.url.startsWith("https:");
         setCookie(c, "ccv-session", validSessionToken, {
           httpOnly: true,
-          secure: false, // Set to true in production with HTTPS
+          secure: isHttps,
           sameSite: "Lax",
           path: "/",
           maxAge: 60 * 60 * 24 * 7, // 7 days

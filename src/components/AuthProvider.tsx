@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useAtomValue, useSetAtom } from "jotai";
-import { type FC, type PropsWithChildren, useEffect } from "react";
+import { type FC, type PropsWithChildren, useLayoutEffect } from "react";
 import { honoClient } from "../lib/api/client";
 import { authCheckQuery } from "../lib/api/queries";
 import { authAtom } from "../lib/auth/store/authAtom";
@@ -18,7 +18,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     queryFn: authCheckQuery.queryFn,
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setAuthState({
       authEnabled: authState.authEnabled,
       authenticated: authState.authenticated,
@@ -64,6 +64,7 @@ export const useAuth = () => {
   return {
     authEnabled: authState.authEnabled,
     isAuthenticated: authState.authenticated,
+    checked: authState.checked,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
   };

@@ -25,8 +25,10 @@ export const RootErrorBoundary: FC<PropsWithChildren> = ({ children }) => {
     <ErrorBoundary
       FallbackComponent={({ error, resetErrorBoundary }) => {
         if (error instanceof HttpError && error.status === 401) {
-          window.location.href = "/login";
-          return null;
+          window.location.replace("/login");
+          return (
+            <div className="flex min-h-screen items-center justify-center" />
+          );
         }
 
         return (
