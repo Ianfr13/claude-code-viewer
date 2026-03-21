@@ -33,7 +33,9 @@ export const ServerEventsProvider: FC<PropsWithChildren> = ({ children }) => {
         await queryClient.invalidateQueries({
           queryKey: projectListQuery.queryKey,
         });
-        // Also invalidate session detail queries to ensure current session is refreshed
+        // Invalidate only the active session detail queries to refresh the current session
+        // after reconnect, without invalidating unrelated queries that would cause a burst
+        // of unnecessary refetches.
         // Pattern: ["projects", projectId, "sessions", sessionId]
         await queryClient.invalidateQueries({
           predicate: (query) => {
@@ -41,7 +43,8 @@ export const ServerEventsProvider: FC<PropsWithChildren> = ({ children }) => {
             return (
               Array.isArray(key) &&
               key[0] === "projects" &&
-              key[2] === "sessions"
+              key[2] === "sessions" &&
+              query.isActive()
             );
           },
         });

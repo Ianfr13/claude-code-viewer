@@ -13,6 +13,7 @@ import { EventBus } from "../../events/services/EventBus";
 import type { CcvOptionsService } from "../../platform/services/CcvOptionsService";
 import type { EnvService } from "../../platform/services/EnvService";
 import { SessionRepository } from "../../session/infrastructure/SessionRepository";
+import { StreamingStateDatabase } from "../../session/infrastructure/StreamingStateDatabase";
 import { VirtualConversationDatabase } from "../../session/infrastructure/VirtualConversationDatabase";
 import type { SessionMetaService } from "../../session/services/SessionMetaService";
 import {
@@ -37,12 +38,14 @@ const LayerImpl = Effect.gen(function* () {
   const sessionProcessService = yield* ClaudeCodeSessionProcessService;
   const virtualConversationDatabase = yield* VirtualConversationDatabase;
   const permissionService = yield* ClaudeCodePermissionService;
+  const streamingStateDatabase = yield* StreamingStateDatabase;
 
   const runtime = yield* Effect.runtime<
     | FileSystem.FileSystem
     | Path.Path
     | CommandExecutor
     | VirtualConversationDatabase
+    | StreamingStateDatabase
     | SessionMetaService
     | ClaudeCodePermissionService
     | EnvService
@@ -257,10 +260,106 @@ const LayerImpl = Effect.gen(function* () {
             return "continue" as const;
           }
 
+          if (message.type === "stream_event") {
+            const event = message.event;
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              const deltaText = event.delta.text;
+              const accumulatedText =
+                yield* streamingStateDatabase.appendPartialText(
+                  processState.def.projectId,
+                  message.session_id,
+                  deltaText,
+                );
+              yield* eventBusService.emit("streamingTokens", {
+                projectId: processState.def.projectId,
+                sessionId: message.session_id,
+                deltaText,
+                accumulatedText,
+              });
+            }
+            return "continue" as const;
+          }
+
+          if (message.type === "tool_progress") {
+            yield* streamingStateDatabase.upsertToolProgress(
+              message.session_id,
+              message.tool_use_id,
+              message.tool_name,
+              message.elapsed_time_seconds,
+            );
+            yield* eventBusService.emit("toolProgress", {
+              projectId: processState.def.projectId,
+              sessionId: message.session_id,
+              toolUseId: message.tool_use_id,
+              toolName: message.tool_name,
+              elapsedTimeSeconds: message.elapsed_time_seconds,
+            });
+            return "continue" as const;
+          }
+
+          if (message.type === "system" && message.subtype === "status") {
+            yield* eventBusService.emit("sessionStatusUpdated", {
+              projectId: processState.def.projectId,
+              sessionId: message.session_id,
+              status: message.status ?? "",
+              message: undefined,
+            });
+            return "continue" as const;
+          }
+
+          if (
+            message.type === "system" &&
+            (message.subtype === "hook_started" ||
+              message.subtype === "hook_progress")
+          ) {
+            const lifecycleKind =
+              message.subtype === "hook_started"
+                ? ("hook_started" as const)
+                : ("hook_progress" as const);
+            const {
+              type: _type,
+              subtype: _subtype,
+              session_id,
+              ...rest
+            } = message;
+            yield* eventBusService.emit("sessionLifecycleEvent", {
+              projectId: processState.def.projectId,
+              sessionId: session_id,
+              lifecycleKind,
+              payload: Object.fromEntries(Object.entries(rest)),
+            });
+            return "continue" as const;
+          }
+
+          if (
+            message.type === "system" &&
+            message.subtype === "hook_response"
+          ) {
+            const {
+              type: _type,
+              subtype: _subtype,
+              session_id,
+              ...rest
+            } = message;
+            yield* eventBusService.emit("sessionLifecycleEvent", {
+              projectId: processState.def.projectId,
+              sessionId: session_id,
+              lifecycleKind: "hook_response",
+              payload: Object.fromEntries(Object.entries(rest)),
+            });
+            return "continue" as const;
+          }
+
           if (
             message.type === "assistant" &&
             processState.type === "initialized"
           ) {
+            // Clear partial text accumulation now that we have the full assistant message
+            yield* streamingStateDatabase.clearPartialText(message.session_id);
+
             yield* sessionProcessService.toFileCreatedState({
               sessionProcessId: processState.def.sessionProcessId,
             });

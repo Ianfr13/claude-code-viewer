@@ -47,6 +47,7 @@ import { useSessionQuery } from "../hooks/useSessionQuery";
 import { sessionProcessesAtom } from "../store/sessionProcessesAtom";
 import { ContextUsage } from "./conversationList/ContextUsage";
 import { ConversationList } from "./conversationList/ConversationList";
+import { StreamingAssistantMessage } from "./conversationList/StreamingAssistantMessage";
 import { ChatActionMenu } from "./resumeChat/ChatActionMenu";
 import { ContinueChat } from "./resumeChat/ContinueChat";
 import { ResumeChat } from "./resumeChat/ResumeChat";
@@ -728,16 +729,16 @@ const SessionPageMainContent: FC<
                 )}
               </div>
             )}
+            {isExistingSession &&
+              effectiveSessionStatus === "running" &&
+              sessionId && <StreamingAssistantMessage sessionId={sessionId} />}
             {isExistingSession && effectiveSessionStatus === "running" && (
-              <div className="flex justify-start items-center py-8 animate-in fade-in duration-500">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
-                    <LoaderIcon className="w-8 h-8 animate-spin text-primary" />
-                    <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
-                  </div>
-                  <p className="text-sm text-muted-foreground font-medium animate-pulse">
+              <div className="flex justify-start items-center py-4 animate-in fade-in duration-500">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                  <LoaderIcon className="w-4 h-4 animate-spin text-primary" />
+                  <span className="animate-pulse">
                     <Trans id="session.processing" />
-                  </p>
+                  </span>
                 </div>
               </div>
             )}

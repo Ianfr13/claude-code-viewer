@@ -216,6 +216,7 @@ export const query = (
       options: {
         settingSources: ["user", "project", "local"],
         ...options,
+        includePartialMessages: true,
       },
     });
   });

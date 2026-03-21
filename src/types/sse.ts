@@ -34,6 +34,43 @@ export type SSEEventDeclaration = {
     projectId: string;
     sessionId: string;
   };
+
+  // Streaming text delta from assistant (token by token)
+  streamingTokens: {
+    projectId: string;
+    sessionId: string;
+    deltaText: string;
+    accumulatedText: string;
+  };
+
+  // Periodic progress while a tool is executing
+  toolProgress: {
+    projectId: string;
+    sessionId: string;
+    toolUseId: string;
+    toolName: string;
+    elapsedTimeSeconds: number;
+  };
+
+  // Status update (e.g. compacting)
+  sessionStatusUpdated: {
+    projectId: string;
+    sessionId: string;
+    status: string;
+    message?: string;
+  };
+
+  // General lifecycle event (hooks, tasks)
+  sessionLifecycleEvent: {
+    projectId: string;
+    sessionId: string;
+    lifecycleKind:
+      | "hook_started"
+      | "hook_progress"
+      | "hook_response"
+      | "task_progress";
+    payload: Record<string, unknown>;
+  };
 };
 
 export type SSEEventMap = {

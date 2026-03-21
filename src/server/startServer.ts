@@ -31,6 +31,7 @@ import { SchedulerController } from "./core/scheduler/presentation/SchedulerCont
 import { SearchController } from "./core/search/presentation/SearchController";
 import { SearchService } from "./core/search/services/SearchService";
 import { SessionRepository } from "./core/session/infrastructure/SessionRepository";
+import { StreamingStateDatabase } from "./core/session/infrastructure/StreamingStateDatabase";
 import { VirtualConversationDatabase } from "./core/session/infrastructure/VirtualConversationDatabase";
 import { SessionController } from "./core/session/presentation/SessionController";
 import { SessionMetaService } from "./core/session/services/SessionMetaService";
@@ -110,6 +111,7 @@ const PlatformLayer = Layer.mergeAll(platformLayer, NodeContext.layer);
 
 const InfraBasics = Layer.mergeAll(
   VirtualConversationDatabase.Live,
+  StreamingStateDatabase.Live,
   ProjectMetaService.Live,
   SessionMetaService.Live,
 );

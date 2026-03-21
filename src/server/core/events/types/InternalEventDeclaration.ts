@@ -33,4 +33,37 @@ export type InternalEventDeclaration = {
     projectId: string;
     sessionId: string;
   };
+
+  streamingTokens: {
+    projectId: string;
+    sessionId: string;
+    deltaText: string;
+    accumulatedText: string;
+  };
+
+  toolProgress: {
+    projectId: string;
+    sessionId: string;
+    toolUseId: string;
+    toolName: string;
+    elapsedTimeSeconds: number;
+  };
+
+  sessionStatusUpdated: {
+    projectId: string;
+    sessionId: string;
+    status: string;
+    message?: string;
+  };
+
+  sessionLifecycleEvent: {
+    projectId: string;
+    sessionId: string;
+    lifecycleKind:
+      | "hook_started"
+      | "hook_progress"
+      | "hook_response"
+      | "task_progress";
+    payload: Record<string, unknown>;
+  };
 };

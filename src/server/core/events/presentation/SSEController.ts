@@ -89,6 +89,59 @@ const LayerImpl = Effect.gen(function* () {
         );
       };
 
+      const onStreamingTokens = (
+        event: InternalEventDeclaration["streamingTokens"],
+      ) => {
+        Effect.runFork(
+          typeSafeSSE.writeSSE("streamingTokens", {
+            projectId: event.projectId,
+            sessionId: event.sessionId,
+            deltaText: event.deltaText,
+            accumulatedText: event.accumulatedText,
+          }),
+        );
+      };
+
+      const onToolProgress = (
+        event: InternalEventDeclaration["toolProgress"],
+      ) => {
+        Effect.runFork(
+          typeSafeSSE.writeSSE("toolProgress", {
+            projectId: event.projectId,
+            sessionId: event.sessionId,
+            toolUseId: event.toolUseId,
+            toolName: event.toolName,
+            elapsedTimeSeconds: event.elapsedTimeSeconds,
+          }),
+        );
+      };
+
+      const onSessionStatusUpdated = (
+        event: InternalEventDeclaration["sessionStatusUpdated"],
+      ) => {
+        Effect.runFork(
+          typeSafeSSE.writeSSE("sessionStatusUpdated", {
+            projectId: event.projectId,
+            sessionId: event.sessionId,
+            status: event.status,
+            message: event.message,
+          }),
+        );
+      };
+
+      const onSessionLifecycleEvent = (
+        event: InternalEventDeclaration["sessionLifecycleEvent"],
+      ) => {
+        Effect.runFork(
+          typeSafeSSE.writeSSE("sessionLifecycleEvent", {
+            projectId: event.projectId,
+            sessionId: event.sessionId,
+            lifecycleKind: event.lifecycleKind,
+            payload: event.payload,
+          }),
+        );
+      };
+
       yield* eventBus.on("sessionListChanged", onSessionListChanged);
       yield* eventBus.on("sessionChanged", onSessionChanged);
       yield* eventBus.on("agentSessionChanged", onAgentSessionChanged);
@@ -99,6 +152,10 @@ const LayerImpl = Effect.gen(function* () {
         "virtualConversationUpdated",
         onVirtualConversationUpdated,
       );
+      yield* eventBus.on("streamingTokens", onStreamingTokens);
+      yield* eventBus.on("toolProgress", onToolProgress);
+      yield* eventBus.on("sessionStatusUpdated", onSessionStatusUpdated);
+      yield* eventBus.on("sessionLifecycleEvent", onSessionLifecycleEvent);
 
       const { connectionPromise } = adaptInternalEventToSSE(rawStream, {
         timeout: 5 /* min */ * 60 /* sec */ * 1000,
@@ -117,6 +174,16 @@ const LayerImpl = Effect.gen(function* () {
               yield* eventBus.off(
                 "virtualConversationUpdated",
                 onVirtualConversationUpdated,
+              );
+              yield* eventBus.off("streamingTokens", onStreamingTokens);
+              yield* eventBus.off("toolProgress", onToolProgress);
+              yield* eventBus.off(
+                "sessionStatusUpdated",
+                onSessionStatusUpdated,
+              );
+              yield* eventBus.off(
+                "sessionLifecycleEvent",
+                onSessionLifecycleEvent,
               );
             }),
           );
