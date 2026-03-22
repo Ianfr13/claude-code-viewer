@@ -18,11 +18,11 @@ export class StreamingStateDatabase extends Context.Tag(
   StreamingStateDatabase,
   {
     readonly appendPartialText: (
-      projectId: string,
       sessionId: string,
       delta: string,
     ) => Effect.Effect<string>;
     readonly clearPartialText: (sessionId: string) => Effect.Effect<void>;
+    readonly clearSession: (sessionId: string) => Effect.Effect<void>;
     readonly upsertToolProgress: (
       sessionId: string,
       toolUseId: string,
@@ -61,11 +61,7 @@ export class StreamingStateDatabase extends Context.Tag(
         return newState;
       };
 
-      const appendPartialText = (
-        _projectId: string,
-        sessionId: string,
-        delta: string,
-      ) =>
+      const appendPartialText = (sessionId: string, delta: string) =>
         Ref.modify(storageRef, (storage) => {
           const newStorage = new Map(storage);
           const state = getOrCreateState(sessionId, newStorage);
@@ -87,6 +83,13 @@ export class StreamingStateDatabase extends Context.Tag(
               accumulatedText: "",
             });
           }
+          return newStorage;
+        });
+
+      const clearSession = (sessionId: string) =>
+        Ref.update(storageRef, (storage) => {
+          const newStorage = new Map(storage);
+          newStorage.delete(sessionId);
           return newStorage;
         });
 
@@ -132,6 +135,7 @@ export class StreamingStateDatabase extends Context.Tag(
       return {
         appendPartialText,
         clearPartialText,
+        clearSession,
         upsertToolProgress,
         clearToolProgress,
         getSessionState,

@@ -269,7 +269,6 @@ const LayerImpl = Effect.gen(function* () {
               const deltaText = event.delta.text;
               const accumulatedText =
                 yield* streamingStateDatabase.appendPartialText(
-                  processState.def.projectId,
                   message.session_id,
                   deltaText,
                 );
@@ -304,7 +303,7 @@ const LayerImpl = Effect.gen(function* () {
             yield* eventBusService.emit("sessionStatusUpdated", {
               projectId: processState.def.projectId,
               sessionId: message.session_id,
-              status: message.status ?? "",
+              status: message.status,
               message: undefined,
             });
             return "continue" as const;
@@ -329,7 +328,7 @@ const LayerImpl = Effect.gen(function* () {
               projectId: processState.def.projectId,
               sessionId: session_id,
               lifecycleKind,
-              payload: Object.fromEntries(Object.entries(rest)),
+              payload: rest,
             });
             return "continue" as const;
           }
@@ -348,7 +347,7 @@ const LayerImpl = Effect.gen(function* () {
               projectId: processState.def.projectId,
               sessionId: session_id,
               lifecycleKind: "hook_response",
-              payload: Object.fromEntries(Object.entries(rest)),
+              payload: rest,
             });
             return "continue" as const;
           }
@@ -357,8 +356,8 @@ const LayerImpl = Effect.gen(function* () {
             message.type === "assistant" &&
             processState.type === "initialized"
           ) {
-            // Clear partial text accumulation now that we have the full assistant message
-            yield* streamingStateDatabase.clearPartialText(message.session_id);
+            // Clear all streaming state now that we have the full assistant message
+            yield* streamingStateDatabase.clearSession(message.session_id);
 
             yield* sessionProcessService.toFileCreatedState({
               sessionProcessId: processState.def.sessionProcessId,
@@ -503,6 +502,16 @@ const LayerImpl = Effect.gen(function* () {
               yield* sessionProcessService.toCompletedState({
                 sessionProcessId: currentProcess.def.sessionProcessId,
               });
+
+              if (currentProcess.sessionId !== undefined) {
+                yield* streamingStateDatabase.clearSession(
+                  currentProcess.sessionId,
+                );
+                yield* eventBusService.emit("sessionStreamingCleared", {
+                  projectId: currentProcess.def.projectId,
+                  sessionId: currentProcess.sessionId,
+                });
+              }
             }),
           );
         });
@@ -540,6 +549,14 @@ const LayerImpl = Effect.gen(function* () {
         sessionProcessId: currentProcess.def.sessionProcessId,
         error: new Error("Task aborted"),
       });
+
+      if (currentProcess.sessionId !== undefined) {
+        yield* streamingStateDatabase.clearSession(currentProcess.sessionId);
+        yield* eventBusService.emit("sessionStreamingCleared", {
+          projectId: currentProcess.def.projectId,
+          sessionId: currentProcess.sessionId,
+        });
+      }
     });
 
   const abortAllTasks = () =>

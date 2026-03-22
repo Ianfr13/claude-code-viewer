@@ -52,12 +52,18 @@ export type SSEEventDeclaration = {
     elapsedTimeSeconds: number;
   };
 
-  // Status update (e.g. compacting)
+  // Status update (e.g. compacting); status: null means "status cleared"
   sessionStatusUpdated: {
     projectId: string;
     sessionId: string;
-    status: string;
+    status: string | null;
     message?: string;
+  };
+
+  // Signals that streaming state should be cleared (session aborted or errored)
+  sessionStreamingCleared: {
+    projectId: string;
+    sessionId: string;
   };
 
   // General lifecycle event (hooks, tasks)

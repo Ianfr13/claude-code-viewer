@@ -142,6 +142,17 @@ const LayerImpl = Effect.gen(function* () {
         );
       };
 
+      const onSessionStreamingCleared = (
+        event: InternalEventDeclaration["sessionStreamingCleared"],
+      ) => {
+        Effect.runFork(
+          typeSafeSSE.writeSSE("sessionStreamingCleared", {
+            projectId: event.projectId,
+            sessionId: event.sessionId,
+          }),
+        );
+      };
+
       yield* eventBus.on("sessionListChanged", onSessionListChanged);
       yield* eventBus.on("sessionChanged", onSessionChanged);
       yield* eventBus.on("agentSessionChanged", onAgentSessionChanged);
@@ -156,6 +167,7 @@ const LayerImpl = Effect.gen(function* () {
       yield* eventBus.on("toolProgress", onToolProgress);
       yield* eventBus.on("sessionStatusUpdated", onSessionStatusUpdated);
       yield* eventBus.on("sessionLifecycleEvent", onSessionLifecycleEvent);
+      yield* eventBus.on("sessionStreamingCleared", onSessionStreamingCleared);
 
       const { connectionPromise } = adaptInternalEventToSSE(rawStream, {
         timeout: 5 /* min */ * 60 /* sec */ * 1000,
@@ -184,6 +196,10 @@ const LayerImpl = Effect.gen(function* () {
               yield* eventBus.off(
                 "sessionLifecycleEvent",
                 onSessionLifecycleEvent,
+              );
+              yield* eventBus.off(
+                "sessionStreamingCleared",
+                onSessionStreamingCleared,
               );
             }),
           );

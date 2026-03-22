@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
 import type { FC, PropsWithChildren } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { projectDetailQuery, sessionDetailQuery } from "../../lib/api/queries";
 import { streamingStateAtom } from "../../lib/atoms/streamingState";
 import { useServerEventListener } from "../../lib/sse/hook/useServerEventListener";
@@ -12,6 +12,17 @@ export const SSEEventListeners: FC<PropsWithChildren> = ({ children }) => {
   const sessionChangedTimers = useRef<
     Map<string, ReturnType<typeof setTimeout>>
   >(new Map());
+
+  // Clean up pending sessionChanged timers on unmount
+  useEffect(() => {
+    const timers = sessionChangedTimers.current;
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, []);
 
   useServerEventListener("sessionListChanged", async (event) => {
     await queryClient.invalidateQueries({
@@ -94,7 +105,7 @@ export const SSEEventListeners: FC<PropsWithChildren> = ({ children }) => {
     }));
   });
 
-  // sessionStatusUpdated — update status message
+  // sessionStatusUpdated — update status message; null status clears it
   useServerEventListener("sessionStatusUpdated", (event) => {
     setStreamingState((prev) => ({
       ...prev,
@@ -102,9 +113,19 @@ export const SSEEventListeners: FC<PropsWithChildren> = ({ children }) => {
         ...prev[event.sessionId],
         accumulatedText: prev[event.sessionId]?.accumulatedText ?? "",
         activeToolProgress: prev[event.sessionId]?.activeToolProgress ?? {},
-        statusMessage: event.message ?? event.status,
+        statusMessage:
+          event.status === null ? null : (event.message ?? event.status),
       },
     }));
+  });
+
+  // sessionStreamingCleared — clear streaming state on abort or error
+  useServerEventListener("sessionStreamingCleared", (event) => {
+    setStreamingState((prev) => {
+      const next = { ...prev };
+      delete next[event.sessionId];
+      return next;
+    });
   });
 
   // sessionLifecycleEvent — reserved for future use

@@ -52,8 +52,13 @@ export type InternalEventDeclaration = {
   sessionStatusUpdated: {
     projectId: string;
     sessionId: string;
-    status: string;
+    status: string | null;
     message?: string;
+  };
+
+  sessionStreamingCleared: {
+    projectId: string;
+    sessionId: string;
   };
 
   sessionLifecycleEvent: {

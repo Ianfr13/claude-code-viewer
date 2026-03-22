@@ -1,4 +1,3 @@
-import { Trans } from "@lingui/react";
 import { useAtomValue } from "jotai";
 import type { FC } from "react";
 import { streamingStateAtom } from "@/lib/atoms/streamingState";
@@ -21,7 +20,7 @@ export const StreamingAssistantMessage: FC<StreamingAssistantMessageProps> = ({
   const hasText = state.accumulatedText.length > 0;
   const toolEntries = Object.entries(state.activeToolProgress);
   const hasTools = toolEntries.length > 0;
-  const hasStatus = state.statusMessage !== null;
+  const hasStatus = !!state.statusMessage; // guards against null AND empty string
 
   if (!hasText && !hasTools && !hasStatus) {
     return null;
@@ -55,7 +54,7 @@ export const StreamingAssistantMessage: FC<StreamingAssistantMessageProps> = ({
           )}
           {hasStatus && (
             <p className="text-xs text-muted-foreground mx-1 sm:mx-2 italic">
-              {state.statusMessage ?? <Trans id="session.processing" />}
+              {state.statusMessage}
             </p>
           )}
         </div>
