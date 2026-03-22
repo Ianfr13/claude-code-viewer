@@ -60,7 +60,7 @@ export type SSEEventDeclaration = {
     message?: string;
   };
 
-  // Signals that streaming state should be cleared (session aborted or errored)
+  // Signals that streaming state was cleared (on any session end: normal, abort, or error)
   sessionStreamingCleared: {
     projectId: string;
     sessionId: string;
@@ -70,11 +70,7 @@ export type SSEEventDeclaration = {
   sessionLifecycleEvent: {
     projectId: string;
     sessionId: string;
-    lifecycleKind:
-      | "hook_started"
-      | "hook_progress"
-      | "hook_response"
-      | "task_progress";
+    lifecycleKind: "hook_started" | "hook_progress" | "hook_response";
     payload: Record<string, unknown>;
   };
 };

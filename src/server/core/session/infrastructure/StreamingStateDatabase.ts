@@ -21,7 +21,6 @@ export class StreamingStateDatabase extends Context.Tag(
       sessionId: string,
       delta: string,
     ) => Effect.Effect<string>;
-    readonly clearPartialText: (sessionId: string) => Effect.Effect<void>;
     readonly clearSession: (sessionId: string) => Effect.Effect<void>;
     readonly upsertToolProgress: (
       sessionId: string,
@@ -45,7 +44,7 @@ export class StreamingStateDatabase extends Context.Tag(
         new Map<string, SessionStreamingState>(),
       );
 
-      const getOrCreateState = (
+      const getOrInitState = (
         sessionId: string,
         storage: Map<string, SessionStreamingState>,
       ): SessionStreamingState => {
@@ -64,26 +63,13 @@ export class StreamingStateDatabase extends Context.Tag(
       const appendPartialText = (sessionId: string, delta: string) =>
         Ref.modify(storageRef, (storage) => {
           const newStorage = new Map(storage);
-          const state = getOrCreateState(sessionId, newStorage);
+          const state = getOrInitState(sessionId, newStorage);
           const updatedState: SessionStreamingState = {
             ...state,
             accumulatedText: state.accumulatedText + delta,
           };
           newStorage.set(sessionId, updatedState);
           return [updatedState.accumulatedText, newStorage];
-        });
-
-      const clearPartialText = (sessionId: string) =>
-        Ref.update(storageRef, (storage) => {
-          const newStorage = new Map(storage);
-          const existing = newStorage.get(sessionId);
-          if (existing !== undefined) {
-            newStorage.set(sessionId, {
-              ...existing,
-              accumulatedText: "",
-            });
-          }
-          return newStorage;
         });
 
       const clearSession = (sessionId: string) =>
@@ -101,7 +87,7 @@ export class StreamingStateDatabase extends Context.Tag(
       ) =>
         Ref.update(storageRef, (storage) => {
           const newStorage = new Map(storage);
-          const state = getOrCreateState(sessionId, newStorage);
+          const state = getOrInitState(sessionId, newStorage);
           const newToolProgress = new Map(state.activeToolProgress);
           newToolProgress.set(toolUseId, { toolName, elapsedTimeSeconds });
           newStorage.set(sessionId, {
@@ -134,7 +120,6 @@ export class StreamingStateDatabase extends Context.Tag(
 
       return {
         appendPartialText,
-        clearPartialText,
         clearSession,
         upsertToolProgress,
         clearToolProgress,

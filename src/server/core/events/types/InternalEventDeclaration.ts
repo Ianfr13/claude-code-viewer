@@ -64,11 +64,7 @@ export type InternalEventDeclaration = {
   sessionLifecycleEvent: {
     projectId: string;
     sessionId: string;
-    lifecycleKind:
-      | "hook_started"
-      | "hook_progress"
-      | "hook_response"
-      | "task_progress";
+    lifecycleKind: "hook_started" | "hook_progress" | "hook_response";
     payload: Record<string, unknown>;
   };
 };

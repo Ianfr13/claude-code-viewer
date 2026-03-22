@@ -18,7 +18,9 @@ export const ToolProgressBadge: FC<ToolProgressBadgeProps> = ({
     >
       <LoaderIcon className="w-3 h-3 animate-spin flex-shrink-0" />
       <span className="font-medium">{toolName}</span>
-      <span className="text-muted-foreground">{elapsedSeconds}s</span>
+      <span className="text-muted-foreground">
+        {Math.round(elapsedSeconds)}s
+      </span>
     </Badge>
   );
 };

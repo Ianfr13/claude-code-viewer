@@ -304,7 +304,6 @@ const LayerImpl = Effect.gen(function* () {
               projectId: processState.def.projectId,
               sessionId: message.session_id,
               status: message.status,
-              message: undefined,
             });
             return "continue" as const;
           }
@@ -454,7 +453,6 @@ const LayerImpl = Effect.gen(function* () {
 
             if (result === "break") {
               break;
-            } else {
             }
           }
         } catch (error) {
@@ -564,10 +562,20 @@ const LayerImpl = Effect.gen(function* () {
       const processes = yield* sessionProcessService.getSessionProcesses();
 
       for (const process of processes) {
+        process.def.abortController.abort();
+
         yield* sessionProcessService.toCompletedState({
           sessionProcessId: process.def.sessionProcessId,
           error: new Error("Task aborted"),
         });
+
+        if (process.sessionId !== undefined) {
+          yield* streamingStateDatabase.clearSession(process.sessionId);
+          yield* eventBusService.emit("sessionStreamingCleared", {
+            projectId: process.def.projectId,
+            sessionId: process.sessionId,
+          });
+        }
       }
     });
 

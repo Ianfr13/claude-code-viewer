@@ -1,5 +1,6 @@
 import { useAtomValue } from "jotai";
 import type { FC } from "react";
+import { MarkdownContent } from "@/app/components/MarkdownContent";
 import { streamingStateAtom } from "@/lib/atoms/streamingState";
 import { ToolProgressBadge } from "./ToolProgressBadge";
 
@@ -32,13 +33,11 @@ export const StreamingAssistantMessage: FC<StreamingAssistantMessageProps> = ({
         <div className="space-y-2">
           {hasText && (
             <div className="mx-1 sm:mx-2 my-2">
-              <p className="text-sm whitespace-pre-wrap break-words text-foreground/90">
-                {state.accumulatedText}
-                <span
-                  className="inline-block w-0.5 h-4 bg-foreground ml-0.5 align-text-bottom"
-                  style={{ animation: "blink 1s step-end infinite" }}
-                />
-              </p>
+              <MarkdownContent content={state.accumulatedText} />
+              <span
+                className="inline-block w-0.5 h-4 bg-foreground ml-0.5 align-text-bottom"
+                style={{ animation: "blink 1s step-end infinite" }}
+              />
             </div>
           )}
           {hasTools && (

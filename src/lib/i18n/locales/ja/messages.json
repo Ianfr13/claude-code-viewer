@@ -2867,10 +2867,6 @@
     "comments": [],
     "origin": [
       [
-        "src/app/projects/[projectId]/sessions/[sessionId]/components/conversationList/StreamingAssistantMessage.tsx",
-        58
-      ],
-      [
         "src/app/projects/[projectId]/sessions/[sessionId]/components/SessionPageMain.tsx",
         740
       ]

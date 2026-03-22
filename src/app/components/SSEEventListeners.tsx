@@ -61,6 +61,15 @@ export const SSEEventListeners: FC<PropsWithChildren> = ({ children }) => {
   // Listen for virtual conversation updates - triggers before file watcher debounce
   // This reduces perceived latency by refreshing session data as soon as new assistant message is received
   useServerEventListener("virtualConversationUpdated", async (event) => {
+    // Cancel any pending sessionChanged debounce for this session so the fast
+    // refetchQueries below wins and the slower debounced invalidation is suppressed
+    const debounceKey = `${event.projectId}:${event.sessionId}`;
+    const existingTimer = sessionChangedTimers.current.get(debounceKey);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      sessionChangedTimers.current.delete(debounceKey);
+    }
+
     // Clear streaming state for this session now that a full message has been committed
     setStreamingState((prev) => {
       const next = { ...prev };
@@ -119,18 +128,13 @@ export const SSEEventListeners: FC<PropsWithChildren> = ({ children }) => {
     }));
   });
 
-  // sessionStreamingCleared — clear streaming state on abort or error
+  // sessionStreamingCleared — clear streaming state on any session end (normal, abort, or error)
   useServerEventListener("sessionStreamingCleared", (event) => {
     setStreamingState((prev) => {
       const next = { ...prev };
       delete next[event.sessionId];
       return next;
     });
-  });
-
-  // sessionLifecycleEvent — reserved for future use
-  useServerEventListener("sessionLifecycleEvent", (_event) => {
-    // Can be expanded later to handle hook_started, hook_progress, etc.
   });
 
   return <>{children}</>;
